@@ -161,4 +161,6 @@ begin
 /
 
 
+Esto está interesante, para implementar en un package:
+https://blogs.oracle.com/sql/how-to-find-the-next-business-day-and-add-or-subtract-n-working-days-with-sql#next-working-day
 
