@@ -1,0 +1,163 @@
+Monto escrito
+
+
+
+create or replace package util_monto_escrito
+as
+   function monto_escrito
+      ( p_number in number ) return varchar2;
+end util_monto_escrito;
+/
+
+
+create or replace package body util_monto_escrito
+as
+
+
+function spell_number( p_number in number )
+return varchar2
+as
+   type myArray is table of varchar2(255);
+  	l_str	myArray := myArray( '',
+                         	' thousand ', ' million ',
+                         	' billion ', ' trillion ',
+                         	' quadrillion ', ' quintillion ',
+                         	' sextillion ', ' septillion ',
+                         	' octillion ', ' nonillion ',
+                         	' decillion ', ' undecillion ',
+                         	' duodecillion ' );
+
+   l_num   varchar2(50) default trunc( p_number );
+   l_return varchar2(4000);
+begin
+   for i in 1 .. l_str.count
+  	loop
+      	exit when l_num is null;
+
+      	if ( substr(l_num, length(l_num)-2, 3) <> 0 )
+      	then
+         	l_return := to_char(
+                         	to_date(
+                          	substr(l_num, length(l_num)-2, 3),
+                            	'J' ),
+                     	'Jsp' ) || l_str(i) || l_return;
+      	end if;
+      	l_num := substr( l_num, 1, length(l_num)-3 );
+  	end loop;
+
+  	return l_return;
+end;
+
+
+
+
+
+function monto_escrito
+  ( p_number in number )
+return varchar2
+as
+begin
+
+	if p_number = 100 then
+    	return 'cien';
+	end if;
+
+	return replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace( replace(
+       	replace( replace( replace( replace(
+replace(replace(
+replace (
+       	lower( spell_number( p_number ))
+       	, 'duodecillion'  	, 'bidecillion' 	)
+       	, 'quintillion'   	, 'cintillion'  	)
+       	, 'billion'       	, 'milliard'    	)
+       	, 'thousand'      	, 'mil'       	)
+       	, 'hundred'       	, 'cientos'        	)
+       	, 'ninety'        	, 'noventa')
+       	, 'eighty'        	, 'ochenta'   )
+       	, 'seventy'       	, 'setenta'	)
+       	, 'setenta-'      	, 'setenta y '	)
+       	, 'sixty'         	, 'sesenta'    	)
+       	, 'fifty'         	, 'cincuenta'   	)
+       	, 'forty'         	, 'cuarenta'    	)
+       	, 'thirty'        	, 'treinta'      	)
+       	, 'twenty'        	, 'veinte'       	)
+       	, 'nineteen'      	, 'diecinueve'    	)
+       	, 'eighteen'      	, 'dieciocho'    	)
+       	, 'seventeen'     	, 'diecisiete'    	)
+       	, 'sixteen'       	, 'dieciséis'       	)
+       	, 'fifteen'       	, 'quince'      	)
+       	, 'fourteen'      	, 'catorce'    	)
+       	, 'thirteen'      	, 'trece'      	)
+       	, 'twelve'        	, 'doce'       	)
+       	, 'eleven'        	, 'once'        	)
+       	, 'ten'           	, 'diez'         	)
+       	, 'nine'          	, 'nueve'        	)
+       	, 'eight'         	, 'ocho'        	)
+       	, 'seven'         	, 'siete'        	)
+       	, 'six'           	, 'seis'        	)
+       	, 'five'          	, 'cinco'        	)
+       	, 'four'          	, 'cuatro'      	)
+       	, 'three'         	, 'tres'       	)
+       	, 'two'           	, 'dos'        	)
+       	, 'one'           	, 'uno'          	)
+       	, 'veinte-'       	, 'veinti'       	)
+       	, 'treinta-'      	, 'treinta y '      	)
+       	, 'cuarenta-'     	, 'cuarenta y '    	)
+       	, 'cincuenta-'    	, 'cincuenta y '      	)
+       	, 'sesenta-'      	, 'sesenta y '       	)
+       	, 'ochenta-'      	, 'ochenta y '        	)
+       	, 'noventa-'      	, 'noventa y '        	)
+       	, '-un '          	, '-une '       	)
+       	, 'uno cientos'   	, 'ciento'        	)
+       	, 'dos cientos'   	, 'doscientos'        	)
+       	, 'tres cientos'  	, 'trescientos'        	)
+       	, 'cuatro cientos'	, 'cuatrocientos'        	)
+       	, 'cinco cientos' 	, 'quinientos'        	)
+       	, 'seis cientos'  	, 'seiscientos'        	)
+       	, 'siete cientos' 	, 'setecientos'        	)
+       	, 'ocho cientos'  	, 'ochocientos'        	)
+       	, 'nueve cientos' 	, 'novecientos'        	)
+       	, 'uno million'   	, 'un millón'        	)
+       	, 'million'       	, 'millones'  )
+       	, 'uno mil'       	, 'mil'       	)
+       	, 'uno'           	, 'un'          	)
+       	, 'sediezta'      	, 'setenta')
+       	, 'y mil'         	, 'y un mil')
+       	, 'milliard'      	, 'mil'      	);
+
+end monto_escrito;
+
+end util_monto_escrito;
+/
+
+Probar:
+
+
+begin
+   for i in 1 .. 101
+   loop
+  	dbms_output.put_line ( util_monto_escrito.monto_escrito (i));
+
+   end loop;
+end;
+/
+
+Acá está la magia:
+
+select to_char( to_date( 123, 'J' ), 'JSP' ) from dual;
+
+
+
+
+
+
+
