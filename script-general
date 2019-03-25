@@ -1,0 +1,164 @@
+create or replace function es_dia_habil_p (
+  un_fecha     date  default  sysdate)
+return boolean
+is
+  mi_x      varchar2 (1);
+  mi_dy_sabado         varchar2 (10);
+  mi_dy_domingo        varchar2 (10);
+  mi_dy_lunes          varchar2 (10);
+  mi_dy_jueves         varchar2 (10);
+  mi_dy_viernes        varchar2 (10);
+begin
+
+  --  Para que ésta función sea independiente del language con que se invoque
+  --  debemos hacer que Oracle nos deletree los días
+
+  --  El 10 de junio de 2017 fue sábado
+  mi_dy_sabado := to_char (to_date ('10-06-2017', 'dd-mm-yyyy'), 'DY');
+  
+  --  El 11 de junio de 2017 fue domingo
+  mi_dy_domingo := to_char (to_date ('11-06-2017', 'dd-mm-yyyy'), 'DY');
+  
+  --  El 12 de junio de 2017 fue lunes
+  mi_dy_lunes := to_char (to_date ('12-06-2017', 'dd-mm-yyyy'), 'DY');
+  
+  --  El 15 de junio de 2017 fue jueves
+  mi_dy_jueves := to_char (to_date ('15-06-2017', 'dd-mm-yyyy'), 'DY');
+  
+  --  El 11 de junio de 2017 fue viernes
+  mi_dy_viernes := to_char (to_date ('16-06-2017', 'dd-mm-yyyy'), 'DY'); 
+
+  select   *
+  into     mi_x
+  from     dual
+  where    to_char((un_fecha),'DY') in (mi_dy_sabado, mi_dy_domingo)
+  or       trunc (un_fecha) in ( 
+                 trunc(un_fecha,'y'),
+                 add_months(trunc(un_fecha,'y'),4),
+                 add_months(trunc(un_fecha,'y'),6) + 19,
+                 add_months(trunc(un_fecha,'y'),7) + 6,
+                 add_months(trunc(un_fecha,'y'),11) + 7,
+                 add_months(trunc(un_fecha,'y'),11) + 24,
+                 next_day(trunc(un_fecha,'y') + 4, mi_dy_lunes),
+                 next_day(add_months (trunc(un_fecha,'y'), 2) + 17, mi_dy_lunes),
+                 next_day(add_months (trunc(un_fecha,'y'), 5) + 27, mi_dy_lunes),
+                 next_day(add_months (trunc(un_fecha,'y'), 7) + 13, mi_dy_lunes),
+                 next_day(add_months (trunc(un_fecha,'y'), 9) + 10, mi_dy_lunes),
+                 next_day(add_months (trunc(un_fecha,'y'), 10) - 1, mi_dy_lunes),
+                 next_day(add_months (trunc(un_fecha,'y'), 10) + 9, mi_dy_lunes),
+             next_day(easter_sunday (to_number(to_char(un_fecha,'RRRR'))) - 5, mi_dy_jueves),
+             next_day(easter_sunday (to_number(to_char(un_fecha,'RRRR'))) - 5, mi_dy_viernes),
+                 easter_sunday (to_number(to_char(un_fecha,'RRRR'))) + 43,
+                 easter_sunday (to_number(to_char(un_fecha,'RRRR'))) + 64,
+                 easter_sunday (to_number(to_char(un_fecha,'RRRR'))) + 71);
+   return false;
+exception
+
+  when no_data_found then
+    return true;
+end;
+/
+
+
+
+create or replace function easter_sunday(p_year number default to_number(to_char(sysdate,'RRRR')))
+  return date is
+/*
+||  Jan Thuis,   April 2004
+||  Calculate the date of Easter Sunday
+||
+||  Gregorian method (any year since 1583) based on algorithm of Oudin
+*/
+  l_eastersunday date;
+  l_g integer;
+  l_c integer;
+  l_d integer;
+  l_e integer;
+  l_h integer;
+  l_k integer;
+  l_p integer;
+  l_q integer;
+  l_i integer;
+  l_j integer;
+  l_x integer;
+
+begin
+  l_g := mod(p_year,19);
+  l_c := floor(p_year/100);
+  l_d := l_c - floor(l_c/4);
+  l_e := floor((8 * l_c + 13)/25);
+  l_h := mod(l_d - l_e + 19 * l_g + 15 ,30);
+  l_k := floor(l_h / 28);
+  l_p := floor(29/(l_h + 1));
+  l_q := floor((21 - l_g)/11);
+  l_i := l_h - l_k * (1 - l_k * l_p * l_q);
+  l_j := mod((p_year + floor(p_year/4 + l_i + 2 - l_d )),7);
+  l_x := 28 + l_i - l_j;
+  l_eastersunday := to_date('0103'||p_year,'DDMMYYYY') + l_x -1;
+
+  return l_eastersunday;
+end easter_sunday;
+/
+
+
+create or replace function dia_habil_p (
+  un_fecha     date  default  sysdate)
+return varchar2
+is
+
+begin
+
+  if es_dia_habil_p (un_fecha) then
+    return 'TRUE';
+  else
+    return 'FALSE';
+  end if;
+
+end dia_habil_p;
+/
+
+
+
+set serveroutput on
+declare
+   mi_dia      date;
+begin
+   mi_dia := to_date ('01/01/2018', 'dd/mm/yyyy');
+
+     for i in 1..365 loop
+
+        dbms_output.put_line (to_char (trunc (mi_dia), 'dd-mon-yyyy') 
+         || '   ' || dia_habil_p (mi_dia));
+        mi_dia := mi_dia + 1;
+   end loop;
+
+  end;
+/
+
+
+
+set serveroutput on
+declare
+   mi_dia      date;
+   l_dato      varchar2 (10);
+begin
+   mi_dia := to_date ('01/01/2019', 'dd/mm/yyyy');
+
+     for i in 1..365 loop
+
+        l_dato := dia_habil_p (mi_dia);
+
+        if l_dato = 'FALSE' and to_char (mi_dia, 'DY') not in ('SAT', 'SUN') then
+
+           dbms_output.put_line (to_char (trunc (mi_dia), 'dd-mon-yyyy') 
+            || '   ' || dia_habil_p (mi_dia));
+
+        end if;
+        mi_dia := mi_dia + 1;
+   end loop;
+
+  end;
+/
+
+
+
